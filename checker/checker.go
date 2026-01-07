@@ -2,10 +2,12 @@ package checker
 
 import (
 	"net/http"
+	"sync"
 	"time"
 )
 
 // CheckResult holds the result of a URL check
+
 type CheckResult struct {
 	URL          string
 	Status       string
@@ -13,13 +15,16 @@ type CheckResult struct {
 	Error        error
 }
 
+// reusable HTTP client
+
+var client = http.Client{
+	Timeout: 10 * time.Second,
+}
+
 // CheckURL checks a single URL
+
 func CheckURL(url string) CheckResult {
 	start := time.Now()
-
-	client := http.Client{
-		Timeout: 10 * time.Second,
-	}
 
 	resp, err := client.Get(url)
 	if err != nil {
@@ -39,16 +44,24 @@ func CheckURL(url string) CheckResult {
 	}
 }
 
-// CheckURLsConcurrently checks multiple URLs in parallel
+// CheckURLsConcurrently checks multiple URLs in parallel (SAFE)
+
 func CheckURLsConcurrently(urls []string) <-chan CheckResult {
-	results := make(chan CheckResult)
+	results := make(chan CheckResult, len(urls))
+	var wg sync.WaitGroup
+
+	wg.Add(len(urls))
+
+	for _, url := range urls {
+		go func(u string) {
+			defer wg.Done()
+			results <- CheckURL(u)
+		}(url)
+	}
 
 	go func() {
-		for _, url := range urls {
-			go func(u string) {
-				results <- CheckURL(u)
-			}(url)
-		}
+		wg.Wait()
+		close(results)
 	}()
 
 	return results

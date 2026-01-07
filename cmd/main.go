@@ -19,9 +19,7 @@ func main() {
 
 	results := checker.CheckURLsConcurrently(urls)
 
-	for i := 0; i < len(urls); i++ {
-		result := <-results
-
+	for result := range results {
 		if result.Error != nil {
 			fmt.Printf(" %s → %s (%v)\n",
 				result.URL,
