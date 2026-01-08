@@ -34,7 +34,6 @@ func CheckURL(url string) CheckResult {
 			Error:  err,
 		}
 	}
-	defer resp.Body.Close()
 
 	return CheckResult{
 		URL:          url,
