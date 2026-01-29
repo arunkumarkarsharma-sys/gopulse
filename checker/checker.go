@@ -1,67 +1,66 @@
 package checker
 
 import (
-	"net/http"
-	"sync"
-	"time"
+
+	 "net/http"
+	   "sync"
+		"time"
 )
 
-// CheckResult holds the result of a URL check
+type result struct {
 
-type CheckResult struct {
-	URL          string
-	Status       string
-	ResponseTime time.Duration
-	Error        error
+	Url      string
+	Status    string
+	Responsetime  time.Duration
+	Error         error
 }
 
-// reusable HTTP client
+func CheckURLsConcurrently(urls []string) []result {
 
-var client = http.Client{
-	Timeout: 10 * time.Second,
+
+
+resultsChan := make(chan Result)
+
+ } for _,urls := Range Urls {
+	go checkURL(Url , resultsChan)
+}
+var results []Result
+
+for  i := 0;  i < len(urls);  i++ {
+    result  := <-resultsChan
+    results  = append(results, result)
 }
 
-// CheckURL checks a single URL
+return results
 
-func CheckURL(url string) CheckResult {
-	start := time.Now()
+func checkURL(url string, ch chan Result) {
 
-	resp, err := client.Get(url)
-	if err != nil {
-		return CheckResult{
-			URL:    url,
-			Status: "DOWN",
-			Error:  err,
-		}
-	}
 
-	return CheckResult{
-		URL:          url,
-		Status:       resp.Status,
-		ResponseTime: time.Since(start),
-		Error:        nil,
-	}
+
+start := time.now()
+
+resp, err := http.Get(url)
 }
 
-// CheckURLsConcurrently checks multiple URLs in parallel (SAFE)
-
-func CheckURLsConcurrently(urls []string) <-chan CheckResult {
-	results := make(chan CheckResult, len(urls))
-	var wg sync.WaitGroup
-
-	wg.Add(len(urls))
-
-	for _, url := range urls {
-		go func(u string) {
-			defer wg.Done()
-			results <- CheckURL(u)
-		}(url)
-	}
-
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
-
-	return results
+if err != nil {
+    ch <- Result{
+        URL:   url,
+        Error: err,
+    }
+    return
 }
+
+ch <- Result{
+    URL:          url,
+    Status:       resp.Status,
+    ResponseTime: time.Since(start),
+}
+
+
+
+
+
+
+
+
+
