@@ -7,7 +7,6 @@ import (
 	"strings"
 )
 
-// ReadURLsFromFile reads URLs line by line from a file
 func ReadURLsFromFile(filename string) ([]string, error) {
 	file, err := os.Open(filename)
 	if err != nil {

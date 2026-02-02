@@ -1,66 +1,53 @@
 package checker
 
 import (
+	"net/http"
 
-	 "net/http"
-	   "sync"
-		"time"
+	"time"
 )
 
-type result struct {
-
-	Url      string
-	Status    string
-	Responsetime  time.Duration
-	Error         error
+type Result struct {
+	Url          string
+	Status       string
+	Responsetime time.Duration
+	Error        error
 }
 
-func CheckURLsConcurrently(urls []string) []result {
+func CheckURLsConcurrently(urls []string) []Result {
 
+	resultsChan := make(chan Result)
 
+	for _, Url := range urls {
+		go checkURL(Url, resultsChan)
+	}
+	var results []Result
 
-resultsChan := make(chan Result)
+	for i := 0; i < len(urls); i++ {
+		result := <-resultsChan
+		results = append(results, result)
+	}
 
- } for _,urls := Range Urls {
-	go checkURL(Url , resultsChan)
+	return results
 }
-var results []Result
-
-for  i := 0;  i < len(urls);  i++ {
-    result  := <-resultsChan
-    results  = append(results, result)
-}
-
-return results
 
 func checkURL(url string, ch chan Result) {
 
+	start := time.Now()
 
+	resp, err := http.Get(url)
 
-start := time.now()
+	if err != nil {
+		ch <- Result{
+			Url:   url,
+			Error: err,
+		}
+		return
+	}
 
-resp, err := http.Get(url)
+	ch <- Result{
+		Url:          url,
+		Status:       resp.Status,
+		Responsetime: time.Since(start),
+	}
+
 }
-
-if err != nil {
-    ch <- Result{
-        URL:   url,
-        Error: err,
-    }
-    return
-}
-
-ch <- Result{
-    URL:          url,
-    Status:       resp.Status,
-    ResponseTime: time.Since(start),
-}
-
-
-
-
-
-
-
-
-
